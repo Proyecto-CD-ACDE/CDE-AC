@@ -14,43 +14,7 @@ Este proyecto es una **aplicación web interactiva** desarrollada en equipo que 
 
 ---
 
-## 🚀 Instrucciones para Iniciar el Proyecto
-
-#### 1. Crear carpeta del proyecto
-
-```bash
-mkdir proyecto_analitica
-cd proyecto_analitica
-```
-
-#### 2. Crear entorno virtual
-
-```bash
-python -m venv .venv
-```
-
-#### 3. Activar entorno virtual
-
-**Windows:**
-```bash
-.venv\Scripts\activate
-```
-
-**macOS/Linux:**
-```bash
-source .venv/bin/activate
-```
-
-#### 4. Instalar dependencias principales
-
-```bash
-pip install streamlit pandas
-pip freeze > requirements.txt
-```
-
----
-
-### Fase 2: Estructura del Proyecto
+### Estructura del Proyecto
 
 El proyecto debe seguir la siguiente estructura de carpetas para habilitar la navegación multipágina de Streamlit:
 
