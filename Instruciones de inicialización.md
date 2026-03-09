@@ -60,7 +60,8 @@ proyecto_analitica/
 ├── pages/
 │   ├── 1_Análisis_Exploratorio_de_Datos_(EDA).py  # Módulo de Análisis
 │   └── 2_Resultados_(EDA).py          # Pantalla de entrega
-├── data/                              # (Opcional) Carpeta para el dataset CSV
+├── src/
+│   └──data/                              # (Opcional) Carpeta para el dataset CSV
 ├── .gitignore                         # Archivos que git debe ignorar
 └── requirements.txt                   # Lista de librerías necesarias
 ```
