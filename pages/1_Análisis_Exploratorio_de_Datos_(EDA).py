@@ -51,7 +51,7 @@ if df is not None:
    date_cols = df.select_dtypes(include=['datetime64']).columns.tolist()
    
    # --- Paso 1: Primer Impacto ---
-   st.header("Step 1: 🔍 Primer Impacto (Dataset Preview)")
+   st.header("1. 🔍 Primer Impacto (Dataset Preview)")
    st.markdown("Observa las primeras filas. ¿Qué conceptos o palabras clave se repiten?")
    st.dataframe(df.head(10))
    
@@ -63,32 +63,23 @@ if df is not None:
        """)
 
    # --- Paso 2: La Estructura ---
-   st.header("Step 2: 🏗️ La Estructura")
-   col1, col2, col3 = st.columns(3)
+   st.header("2. 🏗️ La Estructura")
+   col1, col2 = st.columns(2)
+   
    with col1:
-       st.subheader(f"🔢 Variables Numéricas ({len(num_cols)})")
-       if num_cols:
-           for col in num_cols[:5]:
+       st.subheader(f" Variables Categóricas ({len(cat_cols)})")
+       if cat_cols:
+           for col in cat_cols[:11]:
                st.write(f"• {col}")
-           if len(num_cols) > 5:
-               st.write(f"... y {len(num_cols) - 5} más")
+           if len(cat_cols) > 11:
+               st.write(f"... y {len(cat_cols) - 11} más")
        else:
            st.write("Ninguna")
    
    with col2:
-       st.subheader(f"📝 Variables Categóricas ({len(cat_cols)})")
-       if cat_cols:
-           for col in cat_cols[:5]:
-               st.write(f"• {col}")
-           if len(cat_cols) > 5:
-               st.write(f"... y {len(cat_cols) - 5} más")
-       else:
-           st.write("Ninguna")
-   
-   with col3:
-       st.subheader(f"📅 Variables Temporales ({len(date_cols)})")
-       if date_cols:
-           for col in date_cols:
+       st.subheader(f" Variables Numéricas ({len(num_cols)})")
+       if num_cols:
+           for col in num_cols:
                st.write(f"• {col}")
        else:
            st.write("Ninguna")
@@ -126,9 +117,14 @@ if df is not None:
    st.header("📊 4. Distribuciones y Patrones Clave")
    
    if len(cat_cols) > 0:
+       # Filtrar columnas no deseadas
+       columns_to_exclude = ['latitud', 'longitud', 'ubicación país', 'Latitud', 'Longitud', 'Ubicación País']
+       filtered_cat_cols = [col for col in cat_cols if col not in columns_to_exclude]
+       
        selected_col = st.selectbox(
            "Selecciona una variable para explorar:",
-           cat_cols
+           filtered_cat_cols,
+           help="Elige una variable categórica para ver su distribución"
        )
        
        value_counts = df[selected_col].value_counts().head(15)
