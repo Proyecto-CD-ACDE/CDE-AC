@@ -39,7 +39,7 @@ Una vez que el líder haya inicializado el repositorio en GitHub:
 #### 1. Clonar el repositorio
 
 ```bash
-git clone <URL-DEL-REPOSITORIO>
+git clone <https://github.com/Proyecto-CD-ACDE/CDE-AC.git>
 cd proyecto_analitica
 ```
 
