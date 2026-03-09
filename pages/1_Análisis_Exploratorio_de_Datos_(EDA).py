@@ -1,46 +1,55 @@
 import streamlit as st
 import pandas as pd
-
+import os
 
 # Configuración de la página
-st.set_page_config(page_title="Actividad: Descubriendo los Datos", layout="wide")
+st.set_page_config(page_title="EDA - Colombianos Detenidos en el Exterior", layout="wide")
 
-st.title("🧩 Actividad: ¿De qué se tratan estos datos?")
+st.title("🔍 Análisis Exploratorio de Datos: Colombianos Detenidos en el Exterior")
 st.markdown("""
-### Objetivo de la Actividad
-Tu misión es actuar como un **detective de datos**. A partir de las tablas y estadísticas que verás a continuación, debes deducir el contexto, el origen y el propósito de este conjunto de datos.
+### Objetivo del Proyecto
+Este análisis explora el dataset de **colombianos detenidos en el exterior** con el propósito de comprender los patrones de delincuencia transnacional, identificar países de mayor incidencia y contribuir al diseño de políticas públicas informadas en criminología internacional.
 """)
 
-# --- Barra Lateral con Instrucciones ---
-with st.sidebar:
-   st.header("📋 Guía para el Estudiante")
-   st.info("""
-   1. **Previsualiza**: Observa las primeras filas. ¿Hay nombres de ciudades, fechas o categorías conocidas?
-   2. **Inspecciona**: Mira las dimensiones. ¿Es un dataset pequeño o masivo?
-   3. **Analiza Limpieza**: ¿Faltan muchos datos? ¿En qué columnas?
-   4. **Deduce**: Usa las estadísticas para entender el 'comportamiento' de los datos.
+# --- Barra Lateral con Contexto Teórico ---
+st.markdown("""
+   Este dataset contiene información sobre colombianos detenidos en países extranjeros. 
+   Es un registro estadístico de delincuencia transnacional y movilidad criminal.
+   
+   ### Importancia
+   - **Criminología**: Entender patrones de delincuencia internacional
+   - **Geopolítica**: Identificar regiones con mayor incidencia
+   - **Política Pública**: Diseñar estrategias de prevención y repatriación
+   
+   ### Variables esperadas
+   - País de detención
+   - Tipo de delito
+   - Género y edad
+   - Características demográficas
+   - Información legal y sentencias
    """)
-   st.warning("⚠️ **Prohibido usar gráficos**. El reto es entender los datos solo con números y texto.")
 
 # --- 1. Carga de Datos ---
-uploaded_file = st.file_uploader("Sube un archivo CSV para investigar", type="csv")
-
 @st.cache_data
-def load_data(file):
+def load_data():
    try:
-       return pd.read_csv(file)
+       csv_path = os.path.join(os.path.dirname(__file__), "..", "src", "data", "Colombianos_detenidos_en_el_exterior_20260309.csv")
+       return pd.read_csv(csv_path, encoding='utf-8')
+   except UnicodeDecodeError:
+       return pd.read_csv(csv_path, encoding='latin-1')
    except Exception as e:
        st.error(f"Error al cargar el archivo: {e}")
        return None
 
-# Lógica de selección de archivo
-df = None
-if uploaded_file is not None:
-   df = load_data(uploaded_file)
-   if df is not None:
-       st.success("🕵️ Dataset cargado para investigación.")
+# Carga automática del dataset
+df = load_data()
 
 if df is not None:
+   # Clasificación de variables
+   num_cols = df.select_dtypes(include=['number']).columns.tolist()
+   cat_cols = df.select_dtypes(include=['object']).columns.tolist()
+   date_cols = df.select_dtypes(include=['datetime64']).columns.tolist()
+   
    # --- Paso 1: Primer Impacto ---
    st.header("Step 1: 🔍 Primer Impacto (Dataset Preview)")
    st.markdown("Observa las primeras filas. ¿Qué conceptos o palabras clave se repiten?")
@@ -55,89 +64,121 @@ if df is not None:
 
    # --- Paso 2: La Estructura ---
    st.header("Step 2: 🏗️ La Estructura")
-   col1, col2 = st.columns(2)
+   col1, col2, col3 = st.columns(3)
    with col1:
-       st.subheader("¿Qué tan grande es?")
-       st.write(f"Filas: **{df.shape[0]}**")
-       st.write(f"Columnas: **{df.shape[1]}**")
-   with col2:
-       st.subheader("¿Qué tipos de datos hay?")
-       st.write(df.dtypes)
-   
-   with st.expander("💡 ¿Cómo interpretar la estructura?"):
-       st.write("""
-       - **Filas:** Representan la cantidad de 'eventos' o 'sujetos' registrados. Miles de filas sugieren un fenómeno masivo o de largo plazo.
-       - **Columnas:** Representan las 'características' medidas. Muchas columnas significan un análisis muy detallado.
-       - **Tipos (dtypes):** 
-           - `int64` / `float64`: Son números. Permiten sumas y promedios.
-           - `object`: Generalmente es texto o categorías.
-           - `datetime64`: Fechas y horas (esencial para ver tendencias en el tiempo).
-       """)
-
-   # --- Paso 3: Calidad y Vacíos ---
-   st.header("Step 3: ❗ Calidad y Vacíos")
-   missing = df.isnull().sum()
-   if missing.sum() > 0:
-       st.write("Columnas con datos faltantes:")
-       st.write(missing[missing > 0])
-       st.write("💡 *Pregunta: ¿Por qué crees que faltan datos en esas columnas específicas?*")
-   else:
-       st.success("¡Increíble! Este dataset está completo. No faltan datos.")
-   
-   with st.expander("💡 ¿Qué significan los datos faltantes?"):
-       st.write("""
-       - **Nulos (NaN):** Indican información que no se recolectó o no aplica.
-       - **Impacto:** Si una columna importante (como 'Costo' o 'Fecha') tiene muchos nulos, tus conclusiones podrían ser poco confiables.
-       - **Sesgo:** Si los datos solo faltan para ciertos grupos, el análisis podría estar inclinado hacia un lado.
-       """)
-
-   # --- Paso 4: El Corazón de los Datos ---
-   st.header("Step 4: 📈 El Corazón de los Datos (Estadísticas)")
-   
-   tab1, tab2 = st.tabs(["Números (Cuantitativo)", "Categorías (Cualitativo)"])
-   
-   with tab1:
-       st.write("Resumen estadístico de las columnas numéricas:")
-       st.dataframe(df.describe())
-       
-       with st.expander("📊 Guía de Estadísticas Numéricas"):
-           st.write("""
-           - **Mean (Promedio):** El valor central. ¿Es lo que esperabas para este tema?
-           - **Min / Max:** Los límites. Te ayudan a detectar 'outliers' (valores extraños o errores).
-           - **Std (Desviación):** Qué tan 'dispersos' están los datos. Un número alto significa mucha variedad.
-           - **50% (Mediana):** El punto medio exacto. Si es muy diferente al promedio, los datos están 'estirados' hacia un extremo.
-           """)
-       
-   with tab2:
-       cat_desc = df.describe(exclude=['number'])
-       if not cat_desc.empty:
-           st.write("Resumen de las columnas de texto/categorías:")
-           st.dataframe(cat_desc)
-           
-           with st.expander("🔠 Guía de Estadísticas Categóricas"):
-               st.write("""
-               - **Unique:** Cuántas opciones diferentes hay (ej: 32 departamentos).
-               - **Top (Moda):** El valor que más se repite. ¡Suele ser la clave del dataset!
-               - **Freq:** Cuántas veces aparece el valor 'top'.
-               """)
+       st.subheader(f"🔢 Variables Numéricas ({len(num_cols)})")
+       if num_cols:
+           for col in num_cols[:5]:
+               st.write(f"• {col}")
+           if len(num_cols) > 5:
+               st.write(f"... y {len(num_cols) - 5} más")
        else:
-           st.write("No se detectaron columnas categóricas.")
-
-   # --- Conclusiones de Investigación ---
-   st.header("📝 Resumen de Hallazgos")
+           st.write("Ninguna")
    
-   num_cols = df.select_dtypes(include=['number']).columns.tolist()
-   cat_cols = df.select_dtypes(exclude=['number']).columns.tolist()
+   with col2:
+       st.subheader(f"📝 Variables Categóricas ({len(cat_cols)})")
+       if cat_cols:
+           for col in cat_cols[:5]:
+               st.write(f"• {col}")
+           if len(cat_cols) > 5:
+               st.write(f"... y {len(cat_cols) - 5} más")
+       else:
+           st.write("Ninguna")
+   
+   with col3:
+       st.subheader(f"📅 Variables Temporales ({len(date_cols)})")
+       if date_cols:
+           for col in date_cols:
+               st.write(f"• {col}")
+       else:
+           st.write("Ninguna")
+   
+   # === SECCIÓN 3: TEORÍA DE ANÁLISIS DE DATOS CRIMINALES ===
+   st.header("🔬 3. Teoría: Análisis de Datos Criminales Internacionales")
+   
+   st.markdown("""
+   ### 3.1 Conceptos Clave en Criminología
+   
+   **Delito Transnacional:**
+   Acciones ilícitas que cruzan fronteras nacionales o que son cometidas en jurisdicciones extranjeras.
+   Los datos permiten identificar:
+   - Patrones de movilidad de delincuentes
+   - Cooperación entre sistemas judiciales
+   - Vulnerabilidades en controles fronterizos
+   
+   **Distribución Geográfica:**
+   Los países de detención varían según:
+   - Proximidad geográfica a Colombia
+   - Rutas tradicionales de tráfico
+   - Nivel de aplicación de la ley
+   - Acuerdos de cooperación internacional
+   
+   **Tipología Criminal:**
+   Los tipos de delitos registrados reflejan:
+   - Delincuencia organizada (narcotráfico, tráfico de personas)
+   - Delitos convencionales (robo, asalto)
+   - Fraudes y delitos financieros
+   - Delitos contra la integridad personal
+   """)
+   
+
+   # === SECCIÓN 4: DISTRIBUCIONES Y PATRONES ===
+   st.header("📊 4. Distribuciones y Patrones Clave")
+   
+   if len(cat_cols) > 0:
+       selected_col = st.selectbox(
+           "Selecciona una variable para explorar:",
+           cat_cols
+       )
+       
+       value_counts = df[selected_col].value_counts().head(15)
+       
+       st.markdown(f"#### Distribución de {selected_col}")
+       
+       # Mostrar en tabla
+       distribution_df = pd.DataFrame({
+           'Categoría': value_counts.index,
+           'Registros': value_counts.values,
+           '% del Total': (value_counts.values / value_counts.sum() * 100).round(2)
+       }).reset_index(drop=True)
+       
+       st.dataframe(distribution_df, use_container_width=True)
+       
+       # Información resumida
+       col1, col2, col3 = st.columns(3)
+       with col1:
+           st.metric("Valor más frecuente", value_counts.index[0])
+       with col2:
+           st.metric("Casos del top valor", f"{value_counts.values[0]:,}")
+       with col3:
+           st.metric("Categorías totales", len(value_counts))
+   
+   # === SECCIÓN 5: CONCLUSIONES TEÓRICAS ===
+   st.header("🎓 5. Conclusiones del Análisis Exploratorio")
    
    st.markdown(f"""
-   ### 🕵️ Informe del Detective
-   Basado en tu investigación, aquí hay una validación de lo que has encontrado:
+   ### Hallazgos Teóricos
    
-   *   **Volumen**: Estás manejando **{df.shape[0]} registros**, lo que permite una visión {'global' if df.shape[0] > 1000 else 'específica'} del fenómeno.
-   *   **Variables**: El dataset contiene **{len(cat_cols)} llaves de texto** que definen el 'qué' y el 'dónde', y **{len(num_cols)} llaves numéricas** compartiendo el 'cuánto'.
-   *   **Contexto Sugerido**: Las columnas `{", ".join(cat_cols[:3])}...` sugieren que estamos analizando un fenómeno relacionado con la gestión, reportes o eventos en un entorno específico.
+   **Escala del Fenómeno:**
+   Este dataset registra **{df.shape[0]:,} casos** de ciudadanos colombianos detenidos en el exterior.
+   Esta cifra es significativa para:
+   - Comprender la magnitud real de la delincuencia transnacional
+   - Evaluar el impacto de políticas públicas
+   - Estimar recursos necesarios para cooperación internacional
    
-   **¿Lograste identificar de qué se trata exactamente el dataset?**
+   **Complejidad de Variables:**
+   Con **{df.shape[1]} variables** documentadas, el registro es:
+   - **Multidimensional:** Captura múltiples aspectos del caso (legal, demográfico, geográfico)
+   - **Holistico:** Permite análisis desde varias perspectivas criminológicas
+   - **Robusto:** Suficientemente detallado para investigaciones profundas
+   
+   **Implicaciones para Investigación:**
+   Este dataset permite responder preguntas de criminología como:
+   ✓ ¿En qué países se concentra la detención de colombianos?
+   ✓ ¿Qué tipos de delitos son más comunes internacionalmente?
+   ✓ ¿Hay perfiles demográficos predictivos en delincuencia transnacional?
+   ✓ ¿Cómo han evolucionado los patrones con el tiempo?
    """)
+   
 else:
-   st.warning("Escribe o sube un archivo CSV para empezar el reto.")
+   st.error("❌ No se pudo cargar el dataset. Verifica la ruta del archivo.")
