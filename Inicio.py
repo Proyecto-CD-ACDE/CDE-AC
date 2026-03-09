@@ -78,7 +78,6 @@ for i, persona in enumerate(integrantes):
    with cols[i]:
        st.markdown(f"""
        ### {persona['emoji']} {persona['nombre']}
-       **Rol:** {persona['rol']}
        """)
 
 st.divider()
