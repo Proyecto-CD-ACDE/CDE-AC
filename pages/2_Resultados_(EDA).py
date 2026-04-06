@@ -1,205 +1,159 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
-import os
+import os, sys, re, re
 
-# Configuración de la página
-st.set_page_config(
-   page_title="Resultados EDA - Colombianos Detenidos en el Exterior",
-   page_icon="📊",
-   layout="wide"
-)
+st.set_page_config(page_title="Resultados EDA · CDE-AC", page_icon="📋", layout="wide")
 
-st.title("📊 Resultados: Análisis Exploratorio de Datos Criminales")
-st.markdown("""
-### Reporte de Hallazgos
-Este documento consolida los hallazgos del análisis exploratorio sobre **colombianos detenidos en el exterior**. 
-Utiliza los datos observados en la página de Análisis Exploratorio para completar cada sección.
-""")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from src.design import inject_css, section_header, sidebar_nav
 
-st.divider()
+st.markdown(inject_css(), unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────
-# CARGAR DATOS PARA REFERENCIA
-# ─────────────────────────────────────────────────────────────────
+# ── Load ──────────────────────────────────────────────
 @st.cache_data
 def load_data():
     try:
-        csv_path = os.path.join(os.path.dirname(__file__), "..", "src", "data", "Colombianos_detenidos_en_el_exterior_20260309.csv")
-        return pd.read_csv(csv_path, encoding='utf-8')
+        p = os.path.join(os.path.dirname(__file__), "..", "src", "data",
+                         "Colombianos_detenidos_en_el_exterior_20260309.csv")
+        df = pd.read_csv(p, encoding="latin-1", low_memory=False)
+        # Normalize encoding-broken variants
+        pais_c = df.columns[1]
+        delit_c = df.columns[3]
+        df[pais_c] = df[pais_c].astype(str).apply(
+            lambda x: 'ESPAÑA' if re.match(r'ESPA.{1,3}A$', x) else x)
+        df[delit_c] = df[delit_c].astype(str).apply(
+            lambda x: 'NARCOTRÁFICO' if re.match(r'NARCOTR.{1,3}FICO', x) else x)
+        return df
     except UnicodeDecodeError:
-        return pd.read_csv(csv_path, encoding='latin-1')
+        df = pd.read_csv(p, encoding="latin-1", low_memory=False)
+        # Normalize encoding-broken variants
+        pais_c = df.columns[1]
+        delit_c = df.columns[3]
+        df[pais_c] = df[pais_c].astype(str).apply(
+            lambda x: 'ESPAÑA' if re.match(r'ESPA.{1,3}A$', x) else x)
+        df[delit_c] = df[delit_c].astype(str).apply(
+            lambda x: 'NARCOTRÁFICO' if re.match(r'NARCOTR.{1,3}FICO', x) else x)
+        return df
     except:
         return None
 
 df = load_data()
+cols = list(df.columns) if df is not None else []
 
-# ─────────────────────────────────────────────────────────────────
-# INFORMACIÓN DE REFERENCIA
-# ─────────────────────────────────────────────────────────────────
+# ── Header ────────────────────────────────────────────
+st.markdown("""
+<p class="page-eyebrow">Módulo 2</p>
+<p class="page-title">Resultados del <em>EDA</em></p>
+<p class="page-desc">Reporte consolidado de hallazgos — documenta, edita si lo deseas, y genera un reporte descargable.</p>
+""", unsafe_allow_html=True)
+
+# ── Reference ─────────────────────────────────────────
 if df is not None:
-    st.info(f"""
-    📌 **DATOS DE REFERENCIA:**
-    - Total de registros: **{df.shape[0]:,}**
-    - Variables documentadas: **{df.shape[1]}**
-    - Período: Registros históricos de colombianos detenidos en el exterior
-    """)
+    st.markdown(f"""
+    <div class="sep"></div>
+    <div class="card card--bordered-teal">
+        <h4>📌 Referencia rápida del dataset</h4>
+        <p>
+            <strong class="text-gold">{df.shape[0]:,}</strong> registros · 
+            <strong class="text-gold">{df.shape[1]}</strong> variables · 
+            <strong class="text-gold">{df[cols[1]].nunique()}</strong> países · 
+            Período <strong class="text-gold">2018 – 2025</strong>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --- Formulario de Resultados ---
-with st.container():
-   st.header("🔍 1. Identificación y Contexto del Dataset")
-   contexto = st.text_area(
-       "¿De qué se trata el dataset? (Deducción del origen, tema y propósito)",
-       placeholder="El dataset trata sobre el registro histórico de ciudadanos colombianos detenidos en países extranjeros. Su propósito es documentar la magnitud de la delincuencia transnacional, identificar patrones geográficos y tipos de delitos, y fundamentar políticas públicas en cooperación internacional y repatriación.",
-       value="El dataset trata sobre el registro histórico de ciudadanos colombianos detenidos en países extranjeros. Su propósito es documentar la magnitud de la delincuencia transnacional, identificar patrones geográficos y tipos de delitos, y fundamentar políticas públicas en cooperación internacional y repatriación.",
-       height=150
-   )
+# ── Form ──────────────────────────────────────────────
+st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
+st.markdown(section_header("🔍", "Identificación y Contexto"), unsafe_allow_html=True)
+contexto = st.text_area(
+    "¿De qué se trata el dataset?",
+    value="El dataset trata sobre el registro histórico de ciudadanos colombianos detenidos en países extranjeros. Su propósito es documentar la magnitud de la delincuencia transnacional, identificar patrones geográficos y tipos de delitos, y fundamentar políticas públicas en cooperación internacional y repatriación. La fuente principal es el Ministerio de Relaciones Exteriores de Colombia, que recopila esta información a través de su red consular.",
+    height=140)
 
-   st.header("❗ 2. Calidad de los Datos y Datos Faltantes")
-   calidad = st.text_area(
-       "¿Qué encontraste sobre los datos faltantes y la limpieza?",
-       placeholder="Se identificaron datos faltantes principalmente en: UBICACIÓN PAÍS (68.6% faltante - 266,321 registros), LATITUD (13.6% faltante) y LONGITUD (13.6% faltante). Sin embargo, las variables críticas como País de Prisión, Delito, Género, Edad y Situación Jurídica están 100% completas. Los datos faltantes en ubicación geográfica sugieren restricciones por privacidad o falta de información en registros históricos, pero no afecta el análisis de patrones criminales.",
-       value="Se identificaron datos faltantes principalmente en: UBICACIÓN PAÍS (68.6% faltante - 266,321 registros), LATITUD (13.6% faltante) y LONGITUD (13.6% faltante). Sin embargo, las variables críticas como País de Prisión, Delito, Género, Edad y Situación Jurídica están 100% completas. Los datos faltantes en ubicación geográfica sugieren restricciones por privacidad o falta de información en registros históricos, pero no afecta el análisis de patrones criminales.",
-       height=180
-   )
+st.markdown(section_header("❗", "Calidad de los Datos", "coral"), unsafe_allow_html=True)
+calidad = st.text_area(
+    "¿Qué encontraste sobre datos faltantes y limpieza?",
+    value="Se identificaron datos faltantes en: UBICACIÓN PAÍS (68.6 % faltante), LATITUD y LONGITUD (13.6 %). Las variables críticas — País de Prisión, Delito, Género, Edad y Situación Jurídica — están 100 % completas. Los faltantes en geolocalización se deben a restricciones de privacidad y no afectan el análisis criminológico principal.",
+    height=160)
 
-   st.header("📈 3. Hallazgos Estadísticos Clave")
-   estadisticas = st.text_area(
-       "Interpretación de los números y categorías principales (Modas, concentraciones, patrones)",
-       placeholder="Del análisis de principales variables categóricas: el País de Prisión muestra concentración en economías avanzadas (probable relación con narcotráfico). El Delito evidencia predominancia de crímenes específicos concentrados en pocas categorías. Por Género se observa una distribución que refleja perfiles delictivos. La Situación Jurídica muestra estados legales diversos. La distribución es altamente concentrada en pocas categorías, indicando que la delincuencia transnacional colombiana sigue patrones específicos y no es aleatoria.",
-       value="Del análisis de principales variables categóricas: el País de Prisión muestra concentración en economías avanzadas (probable relación con narcotráfico). El Delito evidencia predominancia de crímenes específicos concentrados en pocas categorías. Por Género se observa una distribución que refleja perfiles delictivos. La Situación Jurídica muestra estados legales diversos. La distribución es altamente concentrada en pocas categorías, indicando que la delincuencia transnacional colombiana sigue patrones específicos y no es aleatoria.",
-       height=180
-   )
+st.markdown(section_header("📈", "Hallazgos Estadísticos", "blue"), unsafe_allow_html=True)
+estadisticas = st.text_area(
+    "Interpretación de números y categorías principales",
+    value="(1) País de Prisión: Venezuela lidera con 26,465 casos, seguido de EE.UU. (24,329) y Ecuador (17,979). (2) Delito: Narcotráfico es el más frecuente (~91,000 registros combinados), seguido de Robo/Hurto (46,910) y Homicidio (30,259). (3) Género: 79 % masculino, 21 % femenino. (4) Situación Jurídica: 42 % condenados, 36 % en investigación, 14 % en juicio. La distribución es altamente concentrada, indicando patrones estructurados.",
+    height=160)
 
-   st.header("💡 4. Conclusiones Finales")
-   conclusion = st.text_area(
-       "¿Cuál es el mensaje principal que nos dan estos datos?",
-       placeholder="El dataset revela que la delincuencia transnacional de colombianos es un fenómeno estructurado y concentrado: (1) Existe una magnitud significativa (388,148 casos) que documenta un problema sistemático; (2) Los patrones no son aleatorios sino concentrados geográfica y tipológicamente; (3) La data quality es robusta en variables críticas lo que permite análisis confiables; (4) La información es multidimensional permitiendo análisis desde perspectivas legal, demográfica y geográfica. Estos datos son fundamentales para diseñar políticas públicas informadas en cooperación internacional, repatriación y prevención de delincuencia transnacional.",
-       value="El dataset revela que la delincuencia transnacional de colombianos es un fenómeno estructurado y concentrado: (1) Existe una magnitud significativa (388,148 casos) que documenta un problema sistemático; (2) Los patrones no son aleatorios sino concentrados geográfica y tipológicamente; (3) La data quality es robusta en variables críticas lo que permite análisis confiables; (4) La información es multidimensional permitiendo análisis desde perspectivas legal, demográfica y geográfica. Estos datos son fundamentales para diseñar políticas públicas informadas en cooperación internacional, repatriación y prevención de delincuencia transnacional.",
-       height=150
-   )
+st.markdown(section_header("💡", "Conclusiones", "violet"), unsafe_allow_html=True)
+conclusion = st.text_area(
+    "¿Cuál es el mensaje principal?",
+    value="La delincuencia transnacional de colombianos es un fenómeno estructurado: (1) 388,148 casos documentados — problema sistemático; (2) Concentración en países vecinos y centros de narcotráfico; (3) Narcotráfico domina, pero hay diversidad de delitos; (4) Perfil predominante: hombres adultos; participación femenina notable en narcotráfico; (5) Variables críticas al 100 % que permiten análisis confiables.",
+    height=140)
 
-st.divider()
+# ── Report ────────────────────────────────────────────
+st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
+st.markdown(section_header("🚀", "Generar Reporte"), unsafe_allow_html=True)
 
-# --- Generación de Reporte ---
-st.header("🚀 Generar Reporte Consolidado")
+c1, _ = st.columns([1,3])
+with c1:
+    generar = st.button("📄 Generar Reporte", use_container_width=True, type="primary")
 
-col1, col2 = st.columns([1, 3])
-with col1:
-   generar = st.button("📄 Generar Reporte", use_container_width=True)
+if generar and contexto and calidad and estadisticas and conclusion and df is not None:
+    st.success("✅ Reporte generado")
 
-if generar:
-   if contexto and calidad and estadisticas and conclusion:
-       st.success("✅ Reporte Generado Exitosamente")
-
-       reporte_md = f"""# Reporte de Análisis Exploratorio de Datos Criminales
+    reporte = f"""# Reporte — Análisis Exploratorio de Datos Criminales
 ## Colombianos Detenidos en el Exterior
 
-**Fecha:** {pd.Timestamp.now().strftime('%d de %B de %Y')}  
-**Fuente:** Dataset CDE-AC (Colombianos Detenidos en el Exterior - Análisis Criminológico)  
+**Fecha:** {pd.Timestamp.now().strftime('%d de %B de %Y')}
+**Fuente:** Dataset CDE-AC | **Registros:** {df.shape[0]:,} | **Variables:** {df.shape[1]} | **Período:** 2018–2025
 
 ---
 
-## 📋 Resumen Ejecutivo
-
-Este reporte consolida los hallazgos del análisis exploratorio sobre delincuencia transnacional de ciudadanos colombianos, 
-basándose en {df.shape[0]:,} registros históricos y {df.shape[1]} variables documentadas.
-
----
-
-## 1. Identificación y Contexto del Dataset
-
+## 1. Contexto
 {contexto}
 
-### Relevancia
-
-- **Criminología:** Proporciona compresión de patrones de delincuencia internacional
-- **Política Pública:** Base para estrategias de prevención y repatriación
-- **Cooperación Internacional:** Facilita acuerdos y coordinación interinstitucional
-
----
-
 ## 2. Calidad de los Datos
-
 {calidad}
 
-### Implicaciones para el Análisis
+| Aspecto | Estado |
+|---------|--------|
+| Análisis de delitos, países, demografía | ✅ Confiable |
+| Análisis espacial detallado | ⚠️ Limitado |
+| Análisis temporal y legal | ✅ Completo |
 
-- ✅ Análisis de delitos, países y perfiles demográficos: **CONFIABLES**
-- ⚠️ Análisis espacial detallado: **LIMITADOS** (datos de ubicación incompletos)
-- ✅ Análisis temporal y legal: **COMPLETO**
-
----
-
-## 3. Hallazgos Estadísticos Clave
-
+## 3. Hallazgos Estadísticos
 {estadisticas}
 
-### Indicadores Principales
+| Indicador | Valor |
+|-----------|-------|
+| Magnitud | {df.shape[0]:,} casos |
+| Países | {df[cols[1]].nunique()} |
+| Completitud vars. críticas | 100 % |
+| Patrón | Estructurado |
 
-| Aspecto | Hallazgo |
-|---------|----------|
-| **Magnitud** | {df.shape[0]:,} casos documentados |
-| **Concentración** | Altamente concentrada en pocas categorías |
-| **Completitud** | 96%+ en variables críticas |
-| **Patrón** | Estructurado, no aleatorio |
-
----
-
-## 4. Conclusiones Finales
-
+## 4. Conclusiones
 {conclusion}
 
 ### Recomendaciones
-
-1. **Análisis Profundo:** Investigar causas raíz de concentración geográfica
-2. **Políticas Informadas:** Diseñar basándose en patrones identificados
-3. **Cooperación:** Fortalecer con países de detención predominantes
-4. **Prevención:** Enfocarse en tipologías criminales prevalentes
-
----
-
-## 📊 Metodología
-
-- **Tipo de Análisis:** Exploratorio (EDA)
-- **Dataset Principal:** Colombianos_detenidos_en_el_exterior_20260309.csv
-- **Período:** Datos históricos consolidados hasta marzo 2026
-- **Variables:** Clasificación automática (numéricas, categóricas, temporales)
+1. Fortalecer cooperación con países de detención predominantes
+2. Focalizar prevención en tipologías criminales prevalentes
+3. Incorporar perspectiva de género en estrategias
+4. Implementar monitoreo predictivo continuo
+5. Desarrollar programas de reinserción post-detención
 
 ---
-
-*Generado por: Módulo de Análisis Exploratorio - Proyecto CDE-AC*  
-*Responsable: Análisis Criminológico Internacional*
+*Proyecto CDE-AC · Juan Esteban Montoya Cadavid & Angel Manuel Gaviria · © 2026*
 """
+    st.markdown(reporte)
+    st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
+    st.download_button("📥 Descargar Reporte (.md)", reporte,
+                       "Reporte_EDA_CDE-AC.md", "text/markdown", type="primary")
+elif generar:
+    st.warning("Completa todas las secciones antes de generar.")
 
-       st.markdown(reporte_md)
-       
-       st.divider()
-       
-       st.download_button(
-           label="📥 Descargar Reporte Completo (.md)",
-           data=reporte_md,
-           file_name="Reporte_EDA_Criminales_20260309.md",
-           mime="text/markdown"
-       )
-   else:
-       st.warning("⚠️ Por favor, asegúrate de que todas las secciones contengan información antes de generar.")
-
-# --- Barra Lateral ---
-   st.header("📋 Instrucciones")
-   st.markdown("""
-   ### Cómo usar esta página:
-   
-   1. **Revisa el Análisis:** Consulta la página "Análisis Exploratorio" primero
-   2. **Completa Secciones:** Cada campo tiene valores predefinidos que puedes editar
-   3. **Valida Datos:** Asegúrate coherencia entre hallazgos y conclusiones
-   4. **Genera Reporte:** Crea documento consolidado en Markdown
-   5. **Descarga:** Exporta para presentación o documentación
-   
-   ### Variables Clave
-   - **Total Registros:** {df.shape[0]:,}
-   - **Total Variables:** {df.shape[1]}
-   - **Datos Completos:** Sí, en variables críticas
-   - **Período:** Histórico
-   """)
-   st.divider()
-   st.markdown("© 2026 - Proyecto CDE-AC | Criminología Internacional")
+# ── Sidebar ───────────────────────────────────────────
+st.sidebar.markdown("### 📋 Resultados del EDA")
+st.sidebar.markdown("Documenta hallazgos y genera un reporte descargable en Markdown.")
+if df is not None:
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(f"**Registros:** {df.shape[0]:,}")
+    st.sidebar.markdown(f"**Variables:** {df.shape[1]}")
+sidebar_nav()
