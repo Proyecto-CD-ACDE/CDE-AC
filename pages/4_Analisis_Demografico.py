@@ -1,8 +1,8 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import os, sys, re, re
+import os, sys, re
 
 st.set_page_config(page_title="Análisis Demográfico · CDE-AC", layout="wide", page_icon="👤")
 
@@ -99,21 +99,24 @@ if df is not None:
 
     e1, e2 = st.columns(2)
     with e1:
-        order = ["PRIMERA INFANCIA","INFANTE","ADOLESCENTE","ADULTO JOVEN","ADULTO","ADULTO MAYOR","DESCONOCIDO"]
-        ec = df[edad_col].value_counts().reindex([o for o in order if o in df[edad_col].unique()])
-        fig = px.bar(x=ec.index, y=ec.values, labels={"x":"","y":"Registros"},
-                     color=ec.index, color_discrete_sequence=CHART_COLORS)
-        apply_layout(fig, height=390, title="Distribución por grupo de edad", showlegend=False, xaxis_tickangle=-20)
+        order = ["ADOLESCENTE", "ADULTO JOVEN", "ADULTO", "ADULTO MAYOR"]
+        ec = df[df[edad_col].isin(order)][edad_col].value_counts().reindex(order).dropna()
+        fig = px.bar(x=ec.values, y=ec.index, orientation="h",
+                     labels={"x": "Registros", "y": ""},
+                     color=ec.values, color_continuous_scale=SCALE_TEAL)
+        apply_layout(fig, height=320, title="Distribución por grupo de edad", showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
     with e2:
-        ed = df[(df[edad_col]!="DESCONOCIDO")&(df[delito_col]!="DESCONOCIDO")]
+        ed = df[(df[edad_col].isin(["ADOLESCENTE","ADULTO JOVEN","ADULTO","ADULTO MAYOR"]))
+                & (df[delito_col]!="DESCONOCIDO")]
         t5d = ed[delito_col].value_counts().head(5).index.tolist()
-        edg = ed[ed[delito_col].isin(t5d)].groupby([edad_col,delito_col]).size().reset_index(name="n")
-        edg.columns = ["Edad","Delito","Registros"]
-        fig = px.bar(edg, x="Edad", y="Registros", color="Delito", barmode="stack",
-                     color_discrete_sequence=CHART_COLORS)
-        apply_layout(fig, height=390, title="Delitos por grupo de edad", xaxis_tickangle=-20)
+        edg = ed[ed[delito_col].isin(t5d)].groupby([edad_col, delito_col]).size().reset_index(name="n")
+        edg.columns = ["Edad", "Delito", "Registros"]
+        fig = px.bar(edg, x="Registros", y="Edad", color="Delito", barmode="stack",
+                     orientation="h", color_discrete_sequence=CHART_COLORS)
+        apply_layout(fig, height=340, title="Delitos por grupo de edad")
+        fig.update_xaxes(tickangle=0)
         st.plotly_chart(fig, use_container_width=True)
 
     # ══════════════════════════════════════════════
@@ -173,7 +176,7 @@ if df is not None:
 
     fig = px.bar(sg, x="Situación", y="%", color="Género", barmode="group", text="%",
                  color_discrete_map={"MASCULINO":"#58a6ff","FEMENINO":"#f472b6"})
-    apply_layout(fig, height=400, title="Distribución jurídica por género (%)", xaxis_tickangle=-20)
+    apply_layout(fig, height=400, title="Distribución jurídica por género (%)", xaxis_tickangle=-35)
     fig.update_traces(texttemplate="%{text}%", textposition="outside")
     st.plotly_chart(fig, use_container_width=True)
 

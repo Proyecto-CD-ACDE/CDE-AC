@@ -160,7 +160,7 @@ button[kind="primary"], .stButton > button[kind="primary"] {
     opacity: 0; transition: opacity 0.25s ease;
 }
 .kpi:hover::before { opacity: 1; }
-.kpi-val { font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.kpi-val { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-top: 6px; }
 .kpi-sub { font-size: 0.78rem; color: var(--accent-teal); margin-top: 2px; }
 
@@ -209,12 +209,14 @@ CHART_LAYOUT = dict(
     xaxis=dict(
         gridcolor='rgba(201,209,217,0.06)',
         zerolinecolor='rgba(201,209,217,0.06)',
-        title_standoff=18,
+        title_standoff=25,
+        automargin=True,
     ),
     yaxis=dict(
         gridcolor='rgba(201,209,217,0.06)',
         zerolinecolor='rgba(201,209,217,0.06)',
-        title_standoff=14,
+        title_standoff=20,
+        automargin=True,
     ),
 )
 
