@@ -24,11 +24,6 @@ ENV/
 # === Streamlit secrets (keep config.toml) ===
 .streamlit/secrets.toml
 
-# === Data files (large CSV) ===
-src/data/*.csv
-src/data/*.xlsx
-src/data/*.xls
-
 # === Jupyter ===
 .ipynb_checkpoints/
 *.ipynb

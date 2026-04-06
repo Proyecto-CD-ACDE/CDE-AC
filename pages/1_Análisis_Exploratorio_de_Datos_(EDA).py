@@ -8,7 +8,8 @@ st.set_page_config(page_title="EDA · CDE-AC", layout="wide", page_icon="🔍")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.design import (inject_css, section_header, kpi_tile, sidebar_nav,
-                         CHART_COLORS, SCALE_GOLD, SCALE_TEAL, SCALE_CORAL, apply_layout)
+                         CHART_COLORS, SCALE_GOLD, SCALE_TEAL, SCALE_CORAL, apply_layout,
+                         DATA_FILE)
 
 st.markdown(inject_css(), unsafe_allow_html=True)
 
@@ -16,8 +17,7 @@ st.markdown(inject_css(), unsafe_allow_html=True)
 @st.cache_data
 def load_data():
     try:
-        p = os.path.join(os.path.dirname(__file__), "..", "src", "data",
-                         "Colombianos_detenidos_en_el_exterior_20260309.csv")
+        p = DATA_FILE
         df = pd.read_csv(p, encoding="latin-1", low_memory=False)
         # Normalize broken encoding variants
         pais_col = df.columns[1]

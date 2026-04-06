@@ -3,6 +3,15 @@ Design System — CDE-AC
 Shared visual language across the application.
 """
 
+import os
+
+DATA_FILE = os.path.abspath(os.path.join(
+    os.path.dirname(__file__),
+    "data",
+    "Colombianos_detenidos_en_el_exterior_20260309.csv"
+))
+
+
 def inject_css():
     """Returns the global CSS string used by every page."""
     return """

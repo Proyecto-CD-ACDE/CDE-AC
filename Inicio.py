@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
-from src.design import inject_css, kpi_tile, section_header, sidebar_nav
+from src.design import inject_css, kpi_tile, section_header, sidebar_nav, DATA_FILE
 
 st.markdown(inject_css(), unsafe_allow_html=True)
 
@@ -18,8 +18,7 @@ st.markdown(inject_css(), unsafe_allow_html=True)
 @st.cache_data
 def dataset_summary():
     try:
-        path = os.path.join(os.path.dirname(__file__), "src", "data",
-                            "Colombianos_detenidos_en_el_exterior_20260309.csv")
+        path = DATA_FILE
         df = pd.read_csv(path, encoding="latin-1", low_memory=False)
         cols = list(df.columns)
         return dict(
